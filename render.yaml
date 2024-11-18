@@ -1,8 +1,6 @@
 services:
   - type: web
     name: CourseDependencyGraph
-    env: python
-    buildCommand: |
-      apt-get update && apt-get install -y graphviz graphviz-dev
-      pip install -r requirements.txt
-    startCommand: python app.py
+    env: docker
+    dockerfilePath: Dockerfile
+    autoDeploy: true
