@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Dependency Graph</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 1.2em;
+            color: #555;
+            margin: 15px 0 10px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .checkbox-list {
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background: #fff;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        label {
+            margin-left: 8px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 1em;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        img {
+            max-width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border: none;
+            border-radius: 0;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2em;
+            color: white;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5em;
+            }
+
+            button {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Course Dependency Graph</h1>
+        <h2>Select completed courses:</h2>
+        <div class="controls">
+            <div id="checkboxList" class="checkbox-list"></div>
+            <button id="generateGraph">Generate Graph</button>
+        </div>
+        <h2>Generated Graph:</h2>
+        <img id="graphImage" src="" alt="Course Dependency Graph" />
+    </div>
+
+    <!-- Modal for Zoomed Image -->
+    <div id="imageModal" class="modal">
+        <span class="modal-close">&times;</span>
+        <img id="modalImage" src="" alt="Zoomed Graph" />
+    </div>
+
+    <script>
+        const checkboxList = document.getElementById('checkboxList');
+        const graphImage = document.getElementById('graphImage');
+        const generateButton = document.getElementById('generateGraph');
+        const imageModal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        const modalClose = document.querySelector('.modal-close');
+
+        // Load course data and populate the checkbox list
+        async function fetchCourses() {
+            const response = await fetch('/get_courses');
+            const courses = await response.json();
+            checkboxList.innerHTML = ''; // Clear any existing checkboxes
+            for (const courseId in courses) {
+                const courseName = courses[courseId].name;
+                const item = document.createElement('div');
+                item.className = 'checkbox-item';
+                item.innerHTML = `
+                    <input type="checkbox" id="${courseId}" value="${courseId}" />
+                    <label for="${courseId}">${courseId} - ${courseName}</label>
+                `;
+                checkboxList.appendChild(item);
+            }
+        }
+
+        // Generate the graph
+        async function generateGraph() {
+            const selectedCourses = Array.from(
+                document.querySelectorAll('.checkbox-item input:checked')
+            ).map(input => input.value);
+
+            const response = await fetch('/generate_graph', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completed_courses: selectedCourses }),
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                graphImage.src = imageUrl;
+            } else {
+                console.error('Failed to generate graph:', response.statusText);
+            }
+        }
+        generateButton.addEventListener('click', generateGraph);
+
+        // Open modal to zoom in on the image
+        graphImage.addEventListener('click', () => {
+            modalImage.src = graphImage.src;
+            imageModal.style.display = 'flex';
+        });
+
+        // Close modal when clicking the close button
+        modalClose.addEventListener('click', () => {
+            imageModal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside the image
+        imageModal.addEventListener('click', (event) => {
+            if (event.target === imageModal) {
+                imageModal.style.display = 'none';
+            }
+        });
+
+        // Load courses and initialize empty state on page load
+        fetchCourses();
+        generateGraph();
+    </script>
+</body>
+</html>

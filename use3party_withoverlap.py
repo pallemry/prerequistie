@@ -82,6 +82,7 @@ def identify_next_courses(course_data, completed_courses):
 
 def generate_circular_graph(
     course_data, completed_courses, overlapping_groups, output_file="updated_course_dependencies.png"
+    ,format="png"
 ):
     """
     Generate a course dependency graph with perfect circles, dynamic label wrapping,
@@ -134,10 +135,10 @@ def generate_circular_graph(
 
     # Apply layout and save
     graph.layout(prog="dot")
-    graph.draw(output_file)  # Save with high resolution
+    graph.draw(output_file, format=format)  # Save with high resolution
     print(f"Graph saved to {output_file}")
 
-def main():
+def generate_graphv2(completed_courses, output_file: object ="course_dependencies.png", format="png"):
     # Load the JSON files
     course_file = "course_dependencies_with_names.json"
     overlap_file = "final_overlapping_groups.json"
@@ -145,7 +146,11 @@ def main():
     course_data = load_data(course_file)
     overlapping_groups = load_data(overlap_file)
 
-    # List of completed courses (manually provided)
+    # Generate the graph
+    generate_circular_graph(course_data, completed_courses, overlapping_groups, output_file, format)
+    
+
+def main():
     completed_courses = [
         "4101", "20474", "20476", "20441", "20471", "20277",
         "20109", "20465", "20475", "20996", "20425", "20466",
@@ -153,7 +158,7 @@ def main():
     ]
 
     # Generate the graph
-    generate_circular_graph(course_data, completed_courses, overlapping_groups)
+    generate_graphv2(completed_courses)
 
 if __name__ == "__main__":
     main()
